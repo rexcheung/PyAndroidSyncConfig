@@ -1,73 +1,71 @@
-from config import CommonConfig
-from os import path
 import os
+from config import constant
+from os import path
 
-FILE = "build.gradle"
-
-"""
-同步两个文件的配置
-"""
-
-KEY = "gradle:"
-
-
-def get_file_path(dir_path):
-    return dir_path + "/" + FILE
+'''
+接收到gradle文件路径
+读取文件内容
+判断有没需要修改的
+1. 若有修改，则删除旧文件，创建新文件
+2. 没有则什么都不需要做了。
+'''
 
 
-def backup(dir_path):
-    full_path = get_file_path(dir_path)
-    backup_path = backup_file_path(dir_path)
-    remove_backup(backup_path)
-    os.rename(full_path, backup_path)
-    pass
+def test(new_content):
+    for i in range(len(new_content)):
+        print(new_content[i])
 
 
-def backup_file_path(dir_path):
-    return get_file_path(dir_path) + ".backup"
+def sync_gradle(filepath):
+    # 文件不存在则退出
+    if not path.isfile(filepath):
+        print('文件不存在')
+        return
 
+    source_file = open(filepath)
+    lines = source_file.readlines()
+    source_file.close()
 
-def remove_backup(file_path):
-    if path.isfile(file_path):
-        os.remove(file_path)
+    modify = False
 
-
-def modify(dir_path):
-    print("modify")
-    file = open(backup_file_path(dir_path))
-    lines = file.readlines()
-    file.close()
-    # print(lines)
-
-    new_path = get_file_path(dir_path)
-    new_file = open(new_path, "w")
+    new_content = []
     for i in range(len(lines)):
         line = lines[i]
-        # 忽略注释的行
-        if "classpath" in line and "//" not in line:
-            # 找到目标行并整行替换
-            print("将要替换的内容：" + line)
-            line = CommonConfig.GRADLE_TOOLS + "\n"
-            print("替换后: " + line)
+        if '//' in line:
+            # 忽略注释的行
+            new_content.append(line)
+            continue
 
-        # 写入文件
-        new_file.write(line)
+        if "com.android.tools.build:gradle" in line:
+            line = '\t\t' + constant.GRADLE_TOOLS + "\n"
+            modify = True
+        elif 'buildToolsVersion' in line:
+            line = '\t' + constant.BUILD_TOOLS + '\n'
+            modify = True
+        elif 'compileSdkVersion' in line:
+            line = '\t' + constant.COMPILE_SDK + '\n'
+            modify = True
+        elif 'minSdkVersion' in line:
+            line = '\t' + constant.MIN_SDK + '\n'
+            modify = True
+        elif 'targetSdkVersion' in line:
+            line = '\t' + constant.TARGET_SDK + '\n'
+            modify = True
 
+        new_content.append(line)
+
+    # 没有修改则什么都不用做了。
+    if not modify:
+        return
+
+    # test(new_content)
+    update(filepath, new_content)
+
+
+def update(filepath, content):
+    if os.path.isfile(filepath):
+        os.remove(filepath)
+
+    new_file = open(filepath, 'w')
+    new_file.writelines(content)
     new_file.close()
-    print("modify end")
-    pass
-
-
-def sync(target_dir):
-    print(CommonConfig.BUILD_TOOLS)
-    full_path = get_file_path(target_dir)
-    print(full_path)
-    is_exist = path.isfile(full_path)
-    if is_exist:
-        print("开始修改" + full_path)
-        backup(target_dir)
-        modify(target_dir)
-        remove_backup(target_dir)
-        print("修改完成" + full_path)
-    else:
-        print("文件不存在")
