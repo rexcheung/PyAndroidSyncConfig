@@ -4,11 +4,10 @@ import os
 
 def copy(path):
     source = "files/gradle"
-    target = path + "gradle"
+    target = os.path.join(path, 'gradle')
     if os.path.isdir(target):
         shutil.rmtree(target)
-    # shutil.copytree(source, target)
-    pass
+    shutil.copytree(source, target)
 
 
 '''

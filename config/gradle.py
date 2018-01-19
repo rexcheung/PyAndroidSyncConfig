@@ -51,6 +51,12 @@ def sync_gradle(filepath):
         elif 'targetSdkVersion' in line:
             line = '\t' + constant.TARGET_SDK + '\n'
             modify = True
+        elif 'com.android.support:appcompat-v7' in line:
+            line = '\t' + constant.V7 + '\n'
+            modify = True
+        elif 'com.android.support:support-v4' in line:
+            line = '\t' + constant.V4 + '\n'
+            modify = True
 
         new_content.append(line)
 
